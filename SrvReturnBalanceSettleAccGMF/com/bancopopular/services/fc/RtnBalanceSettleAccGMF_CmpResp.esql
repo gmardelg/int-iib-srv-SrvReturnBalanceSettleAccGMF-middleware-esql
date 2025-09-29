@@ -1,0 +1,149 @@
+BROKER SCHEMA com.bancopopular.services.fc
+
+
+CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpResp
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		--Referencia a datos del mensaje original y mensaje de respuesta
+		DECLARE refOri REFERENCE TO InputRoot;
+		DECLARE refMsgRs REFERENCE TO InputLocalEnvironment.ReturnedMessage;
+		
+		--Variables para armar mensaje de contexto o de error(si aplica)
+		SET Environment.Variables.headers.MQMD	 = refOri.MQMD;
+		SET Environment.Variables.headers.MQMD.CorrelId = CAST(refOri.MQRFH2.usr.CorrelId AS BLOB);
+		SET Environment.Variables.headers.MQRFH2 = refOri.MQRFH2;
+
+		/*******************************************************
+		 Copiar cabeceras, identificadores de mensaje y ReplyToQ
+		*******************************************************/
+		SET OutputRoot.Properties	 = refOri.Properties;
+		SET OutputRoot.MQMD			 = refOri.MQMD;
+		SET OutputRoot.MQMD.MsgId 	 = CAST(refOri.MQRFH2.usr.CorrelId AS BLOB);
+		SET OutputRoot.MQMD.CorrelId = CAST(refOri.MQRFH2.usr.CorrelId AS BLOB);
+		SET OutputRoot.MQRFH2 		 = refOri.MQRFH2;
+		
+		--Declara Referencia a MQRFH2
+		DECLARE refMQRFH2 REFERENCE TO OutputRoot.MQRFH2;
+		
+		--Declara variables de uso interno
+		DECLARE codeError, nameError, descError CHARACTER '';
+		
+		/******************************************************/
+		--Establece información para auditoría
+		/******************************************************/
+		SET refMQRFH2.usr.log.idLog	= '3';
+		CALL common.procedures.general.createMsgLogs(refMQRFH2, refMQRFH2.usr.log.idLog, 'MQ');
+		SET OutputRoot.XMLNSC = refMsgRs.XMLNSC;
+
+		--Establece nombres de proveedor y aplicación
+		SET refMQRFH2.usr.log.nmProvider		= PROVIDER;
+		SET refMQRFH2.usr.log.nameApplication	= SERVICE;
+		
+		--Envia mensaje de Auditoria
+		PROPAGATE TO TERMINAL 'out1' DELETE NONE;
+		SET OutputRoot.XMLNSC	= NULL;
+		/******************************************************/
+		
+		--Refrencias a estructuras de mensaje de respuesta FC
+		DECLARE inputRefHdr  REFERENCE TO refMsgRs.XMLNSC.*:FCUBS_RES_ENV.*:FCUBS_HEADER;
+		DECLARE inputRefBody REFERENCE TO refMsgRs.XMLNSC.*:FCUBS_RES_ENV.*:FCUBS_BODY;
+		DECLARE inputRefInfo REFERENCE TO refMsgRs.XMLNSC.*:FCUBS_RES_ENV.*:FCUBS_BODY.*:"Transaction-Details";
+		
+		--Almacena respuesta de FC y operacion
+		SET refMQRFH2.usr.Result	= inputRefHdr.*:MSGSTAT;
+		SET refMQRFH2.usr.operation = OPERATION;
+		
+		/****************************************
+		 Genera mensaje de respuesta del Servicio
+		****************************************/
+		--Datos para mensaje de respuesta
+		DECLARE refParm REFERENCE TO refMQRFH2.usr.response.WS;
+		DECLARE v1 NAMESPACE refParm.nameSpace.*:v1;
+		DECLARE nmSrvRes1 CHARACTER COALESCE(refParm.nmMsg1, 'ApplicationFault');
+		DECLARE nmSrvRes2 CHARACTER COALESCE(refParm.nmMsg2, 'FaultRs');
+		
+		--Establece de referencias a mensaje de respuesta
+		CREATE FIELD OutputRoot.XMLNSC.v1:{nmSrvRes1}.v1:{nmSrvRes2};
+		DECLARE refOut REFERENCE TO OutputRoot.XMLNSC.v1:{nmSrvRes1}.v1:{nmSrvRes2};
+		
+		--Organiza nombre namespace
+		SET refOut.(XMLNSC.NamespaceDecl)xmlns:v1 = v1;
+		SET refOut.(XMLNSC.NamespaceDecl)xmlns:ifx = ifx;
+		SET refOut.(XMLNSC.NamespaceDecl)xmlns:v2 = v2;
+		
+		--Declaración de referencia para obtener datos de homologación
+		DECLARE data ROW;
+		DECLARE value REFERENCE TO data.value;		
+		DECLARE statusCode CHARACTER;
+		
+		DECLARE faultString CHARACTER InputRoot.SOAP.Body.*:Fault.faultstring;
+		IF (faultString IS NOT NULL) THEN
+			DECLARE numError, description, descripError CHARACTER;
+			DECLARE codError INTEGER 300;
+
+			CALL common.procedures.global.cache.getDataErrorCache(codError, 'ERRORS', UBSCOMP, value);
+			SET refOut.ifx:Status.ifx:StatusCode                      = CAST(value.codeError AS INTEGER);
+			SET refOut.ifx:Status.ifx:Severity                        = value.severity;
+			SET refOut.ifx:Status.ifx:StatusDesc                      = value.descError;
+			SET refOut.ifx:Status.ifx:AdditionalStatus.ifx:StatusCode = value.codeError;
+			SET refOut.ifx:Status.ifx:AdditionalStatus.ifx:StatusDesc = value.descError;
+		ELSE
+			--Referencia a mensaje request para obtener datos requeridos en mensaje de respuesta
+			DECLARE msgOrg ROW;
+			DECLARE refMsgOrg REFERENCE TO msgOrg.data;
+			DECLARE dataOrig CHARACTER refMQRFH2.usr.TraceAudit.TramaIn;
+			DECLARE ccidv INTEGER COALESCE(InputRoot.MQMD.CodedCharSetId, 819);
+	        CREATE LASTCHILD OF refMsgOrg DOMAIN('XMLNSC') PARSE(dataOrig CCSID ccidv);
+	       	MOVE refMsgOrg LASTCHILD;
+	        MOVE refMsgOrg LASTCHILD;
+	        MOVE refMsgOrg LASTCHILD;
+	        MOVE refMsgOrg LASTCHILD;			
+
+			IF inputRefHdr.*:MSGSTAT = 'SUCCESS' THEN
+				--Establece Status de respuesta exitosa				
+				SET refOut.ifx:Status.ifx:StatusCode = CodeError;
+				SET refOut.ifx:Status.ifx:Severity   = Severity;
+				SET refOut.ifx:Status.ifx:StatusDesc = DescError;
+				
+				--Código y Descripción original de mensaje de respuesta de FC
+				SET statusCode 												 = COALESCE(inputRefBody.*:FCUBS_WARNING_RESP.*:WARNING[<].*:WCODE,inputRefBody.*:FCUBS_ERROR_RESP.*:ERROR[1].*:ECODE);
+				SET refOut.ifx:Status.ifx:AdditionalStatus.ifx:StatusCode    = RIGHT(statusCode,2);
+				SET refOut.ifx:Status.ifx:AdditionalStatus.ifx:StatusDesc    = statusCode || '::' || COALESCE(inputRefBody.*:FCUBS_WARNING_RESP.*:WARNING[<].*:WDESC,inputRefBody.*:FCUBS_ERROR_RESP.*:ERROR[1].*:EDESC);
+			ELSE
+				CALL common.procedures.global.cache.getDataErrorCache(COALESCE(inputRefBody.*:FCUBS_ERROR_RESP.*:ERROR[1].*:ECODE,inputRefBody.*:FCUBS_WARNING_RESP.*:WARNING[<].*:WCODE), ERRORS, UBSCOMP, value);				
+				SET refOut.ifx:Status.ifx:StatusCode                         = CAST(value.codeError AS INTEGER);			
+				SET refOut.ifx:Status.ifx:Severity                           = value.severity;
+				SET refOut.ifx:Status.ifx:StatusDesc                         = value.descError;
+				
+				--Código y Descripción original de mensaje de respuesta de FC
+				SET statusCode = COALESCE(inputRefBody.*:FCUBS_ERROR_RESP.*:ERROR[1].*:ECODE,inputRefBody.*:FCUBS_WARNING_RESP.*:WARNING[<].*:WCODE);
+				IF common.functions.general.isNumeric(RIGHT(statusCode,2)) = FALSE OR RIGHT(statusCode,2) = '00' THEN
+					--Si últimos dos caracteres de código de error es alfanumérico u obedece a un error genérico (100, 200 o 300), establece AdditionalStatus/StatusCode = 100 (valor por default)
+					SET refOut.ifx:Status.ifx:AdditionalStatus.ifx:StatusCode = ONE_HUNDRED;
+				ELSE
+					SET refOut.ifx:Status.ifx:AdditionalStatus.ifx:StatusCode = RIGHT(statusCode,2);
+				END IF;
+				SET refOut.ifx:Status.ifx:AdditionalStatus.ifx:StatusDesc    = statusCode || '::' || COALESCE(inputRefBody.*:FCUBS_ERROR_RESP.*:ERROR[1].*:EDESC,inputRefBody.*:FCUBS_WARNING_RESP.*:WARNING[<].*:WDESC);
+			END IF;
+
+			--Se establecen datos de mensaje request en mensaje de respuesta
+			SET refOut.ifx:RqUID 				= COALESCE(refMQRFH2.usr.transactionInfoRq.transactionId, refMsgOrg.*:RqUID);
+			SET refOut.ifx:MsgRqHdr 			= refMsgOrg.*:MsgRqHdr;
+			SET refOut.ifx:MsgRqHdr.v2:NextDay  = CURRENT_TIMESTAMP;
+					
+			SET refOut.ifx:MsgRsHdr.ifx:TxCostAmt.ifx:CurAmt.ifx:Amt 		= COALESCE(FIELDVALUE(inputRefBody.*:"Query-Details-Full".*:ACYAVLBAL),'0');
+			SET refOut.ifx:MsgRsHdr.ifx:TxCostAmt.ifx:CurAmt.ifx:CurCode 	= COP;
+			SET refOut.ifx:MsgRsHdr.ifx:EffDt 								= CURRENT_TIMESTAMP;
+			SET refOut.ifx:MsgRsHdr.ifx:RemainRec 							= FALSE;
+		    SET refOut.ifx:CustId 											= refMsgOrg.*:CustId;
+
+			--Si respuesta es exitosa, complementa datos de cuentas
+			IF inputRefHdr.*:MSGSTAT = 'SUCCESS' THEN
+				SET refOut.ifx:ProductId.ifx:CommisionValue = inputRefInfo.*:LCYTOTCHGAMT;
+			END IF;
+		END IF;
+
+		--Envio mensaje de respuesta de servicio
+		RETURN TRUE;
+	END;
+END MODULE;

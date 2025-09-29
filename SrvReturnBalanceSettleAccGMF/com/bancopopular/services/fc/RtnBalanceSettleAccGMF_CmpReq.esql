@@ -1,0 +1,95 @@
+BROKER SCHEMA com.bancopopular.services.fc
+PATH common.functions.global.cache;
+
+
+CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpReq
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		/******************************************************/
+		-- Copiar cabeceras de mensaje
+		/******************************************************/
+		SET OutputRoot.MQMD 	   		= InputRoot.MQMD;
+		SET OutputRoot.MQMD.CorrelId	= InputRoot.MQMD.MsgId;
+		SET OutputRoot.MQMD.Expiry 		= UDP_MQEXPIRY;
+		SET OutputRoot.MQRFH2 	   		= InputRoot.MQRFH2;
+		
+		/******************************************************/
+		-- Declarar referencias
+		/******************************************************/
+		DECLARE refEnv REFERENCE TO Environment;
+		DECLARE refMQRFH2 REFERENCE TO OutputRoot.MQRFH2;
+		DECLARE refInpRoot REFERENCE TO InputRoot;
+		
+		--Referencia mensaje de entrada
+		DECLARE refInp REFERENCE TO InputRoot.XMLNSC;
+		MOVE refInp LASTCHILD;
+		MOVE refInp LASTCHILD;
+		
+		/******************************************************/
+		-- Establece información para auditoría
+		/******************************************************/
+		SET refMQRFH2.usr.log.idLog	= '2';
+		CALL common.procedures.general.createMsgLogs(refMQRFH2, refMQRFH2.usr.log.idLog, 'MQ');
+		CALL common.procedures.general.saveMQM(refInpRoot, refEnv, refMQRFH2.usr.log.idLog);
+
+		--Establece nombres de proveedor y aplicación 
+		SET refMQRFH2.usr.log.nmProvider		= PROVIDER;
+		SET refMQRFH2.usr.log.nameApplication	= SERVICE;
+
+		/******************************************************/
+		-- Creación Mensaje a enviar a FC
+		/******************************************************/
+		-- Declaración de namespace default (prefijo vacio)
+		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.(XMLNSC.NamespaceDecl)xmlns = ns;
+		
+		CREATE FIELD OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_HEADER;
+		DECLARE refOutHdr REFERENCE TO OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_HEADER;
+		
+		--Variables de uso interno
+		DECLARE rqUID     	CHARACTER FIELDVALUE(refInp.*:RqUID);
+		DECLARE channel     CHARACTER FIELDVALUE(refInp.*:MsgRqHdr.*:Channel);
+		DECLARE Concep     CHARACTER FIELDVALUE(refInp.*:ProductId.*:Concept);
+
+		--Mapeo del header
+		SET refOutHdr.ns:SOURCE  = getDataHomologationCache(UBSCOMP,HOM_CAN,channel, HOMOLOGATION);
+		SET refOutHdr.ns:UBSCOMP = UBSCOMP;
+
+		--Lógica para establecer valor de MSGID dado que FC no puede recibir un mismo MSGID para dos o más transacciones
+		DECLARE msgIdNew CHARACTER;
+		--S ya han establecido un nuevo MSGID desde otro componente del BUS
+		IF EXISTS(refInp.*:RqUID2[]) THEN
+			SET msgIdNew = common.functions.general.getRQUIDForFC(refInp.*:RqUID2);
+		END IF;
+		SET refMQRFH2.usr.TRX_REF_1 = rqUID;
+
+		--Mapeo del Header
+		SET refOutHdr.ns:MSGID 					   = COALESCE(msgIdNew, rqUID);	
+		SET refOutHdr.ns:USERID                    = FCUSER;
+		SET refOutHdr.ns:BRANCH                    = FIELDVALUE(refInp.*:MsgRqHdr.*:BankInfo.*:BranchId);
+		SET refOutHdr.ns:SERVICE                   = SERVICEFC;
+		SET refOutHdr.ns:OPERATION                 = OPERATION;
+		SET refOutHdr.ns:SOURCE_OPERATION          = OPERATION;
+		SET refOutHdr.ns:SOURCE_USERID             = FIELDVALUE(refInp.*:MsgRqHdr.*:UserId.*:GovIssueIdent.*:IdentSerialNum);
+		SET refOutHdr.ns:ADDL.ns:PARAM[1].ns:NAME  = PARAM_NAME_1;
+		SET refOutHdr.ns:ADDL.ns:PARAM[1].ns:VALUE = COALESCE(FIELDVALUE(refInp.*:MsgRqHdr.*:BankInfo.*:BankIdType),ONE);
+		SET refOutHdr.ns:ADDL.ns:PARAM[2].ns:NAME  = PARAM_NAME_2;
+		SET refOutHdr.ns:ADDL.ns:PARAM[2].ns:VALUE = COALESCE(FIELDVALUE(refInp.*:MsgRqHdr.*:KeyAcctId), ONE);
+		SET refOutHdr.ns:ADDL.ns:PARAM[3].ns:NAME  = PARAM_NAME_3;
+		SET refOutHdr.ns:ADDL.ns:PARAM[3].ns:VALUE = COALESCE(FIELDVALUE(refInp.*:MsgRqHdr.*:IPAddr),ONE);
+		SET refOutHdr.ns:ADDL.ns:PARAM[4].ns:NAME  = PARAM_NAME_4;
+		SET refOutHdr.ns:ADDL.ns:PARAM[4].ns:VALUE = FIELDVALUE(refInp.ifx:RqUID);
+		
+		--Mapeo del body
+		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:TXNACC 	= FIELDVALUE(refInp.*:ProductId.*:AccountNumber);
+		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:PRD 	 	= getDataHomologationPRDFCCache(channel,CAUSAL,Concep, HOMOLOGATION);
+		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:TXNAMT 	= FIELDVALUE(refInp.*:ProductId.*:Amt);
+		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:TXNCCY 	= COP;
+		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:XREF 	 	= FIELDVALUE(refInp.ifx:RqUID);
+		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:BRN 	 	= FIELDVALUE(refInp.*:MsgRqHdr.*:BankInfo.*:BranchId);
+		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:TXNBRN 	= FIELDVALUE(refInp.*:ProductId.*:BranchId);						 
+				
+		--Envia mensaje para Auditoria y Back-end
+		PROPAGATE TO TERMINAL 'out1' DELETE NONE;
+		RETURN TRUE;
+	END;
+END MODULE;

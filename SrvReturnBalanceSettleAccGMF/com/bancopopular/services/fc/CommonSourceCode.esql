@@ -1,6 +1,6 @@
 BROKER SCHEMA com.bancopopular.services.fc
 
---Declaración de nameSpaces
+--Declaración de nameSpaces 
 DECLARE soapenv NAMESPACE 'http://schemas.xmlsoap.org/soap/envelope/';
 DECLARE ifx NAMESPACE 'urn://grupoaval.com/xsd/ifx/';
 DECLARE v2 NAMESPACE 'urn://grupoaval.com/xsd/ifx/v2/';

@@ -19,7 +19,7 @@
       <nodes xmi:type="ComIbmCompute.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_3" location="368,175" dataSource="AUDITORIA" computeExpression="esql://routine/com.bancopopular.services.fc#RtnBalanceSettleAccGMF_CmpResp.Main" computeMode="destinationAndMessage">
         <translation xmi:type="utility:ConstantString" string="PreparaRespuesta"/>
       </nodes>
-      <nodes xmi:type="ComIbmMQGet.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_4" location="230,179" queueName="MQINP.RTNBALANCESETTLEACC.FC.RESP" messageDomainProperty="XMLNSC" transactionMode="no" generateMode="messageAndLocalEnvironment" copyMessage="copyEntireMessage" waitInterval="7000" getWithCorrelID="true" outputDataLocation="OutputLocalEnvironment.ReturnedMessage">
+      <nodes xmi:type="ComIbmMQOtro.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_4" location="230,179" queueName="MQINP.RTNBALANCESETTLEACC.FC.RESP" messageDomainProperty="XMLNSC" transactionMode="no" generateMode="messageAndLocalEnvironment" copyMessage="copyEntireMessage" waitInterval="7000" getWithCorrelID="true" outputDataLocation="OutputLocalEnvironment.ReturnedMessage">
         <translation xmi:type="utility:ConstantString" string="MQ_SERVICE.RESP"/>
       </nodes>
       <nodes xmi:type="ComIbmMQOutput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_5" location="415,250" queueName="LOG.REGISTER.REQ" transactionMode="no">

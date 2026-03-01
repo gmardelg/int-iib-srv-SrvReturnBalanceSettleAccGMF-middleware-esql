@@ -5,7 +5,7 @@
     <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.queueName" name="queueName" defaultValueLiteral="MQINP.JMS_ADAPTER_CORE.REQ">
       <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     </eStructuralFeatures>
-    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.UDP_MQEXPIRY1" name="UDP_MQEXPIRY" lowerBound="1" defaultValueLiteral="300">
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.UDP_MQEXPIRY" name="UDP_MQEXPIRY" lowerBound="1" defaultValueLiteral="300">
       <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     </eStructuralFeatures>
     <translation xmi:type="utility:TranslatableString" key="ReturnBalanceSettleAccGMF_REQ" bundleName="com/bancopopular/services/fc/ReturnBalanceSettleAccGMF_REQ" pluginId="SrvReturnBalanceSettleAccGMF"/>

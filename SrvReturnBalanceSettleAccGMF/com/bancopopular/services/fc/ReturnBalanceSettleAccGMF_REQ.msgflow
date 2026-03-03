@@ -54,7 +54,7 @@
     <propertyOrganizer>
       <propertyDescriptor groupName="Group.Basic" propertyEditor="com.ibm.etools.mft.ibmnodes.editors.mq.MQQueueNameEditor" configurable="true" describedAttribute="Property.queueName">
         <propertyName xmi:type="utility:TranslatableString" key="Property.queueName" bundleName="ComIbmMQOutput" pluginId="com.ibm.etools.mft.ibmnodes.definitions"/>
-        <propertyDescriptor groupName="Group.Basic" configurable="true" userDefined="true" describedAttribute="Property.UDP_MQEXPIRY">
+        <propertyDescriptor groupName="Group.Basic" configurable="true" userDefined="true" describedAttribute="Property.UDP_MQEXPIRY1">
           <propertyName xmi:type="utility:TranslatableString" key="Property.UDP_MQEXPIRY" bundleName="com/bancopopular/services/fc/ReturnBalanceSettleAccGMF_REQ" pluginId="SrvReturnBalanceSettleAccGMF"/>
         </propertyDescriptor>
       </propertyDescriptor>

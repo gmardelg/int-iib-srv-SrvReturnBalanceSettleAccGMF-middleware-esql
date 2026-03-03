@@ -51,7 +51,7 @@
     </composition>
     <propertyOrganizer>
       <propertyDescriptor groupName="Group.Basic" describedAttribute="Property.waitInterval">
-        <propertyName xmi:type="utility:TranslatableString" key="Property.waitInterval" bundleName="ComIbmMQGet1" pluginId="com.ibm.etools.mft.ibmnodes.definitions"/>
+        <propertyName xmi:type="utility:TranslatableString" key="Property.waitInterval" bundleName="ComIbmMQGet" pluginId="com.ibm.etools.mft.ibmnodes.definitions"/>
       </propertyDescriptor>
     </propertyOrganizer>
     <attributeLinks promotedAttribute="Property.waitInterval" overriddenNodes="FCMComposite_1_4">

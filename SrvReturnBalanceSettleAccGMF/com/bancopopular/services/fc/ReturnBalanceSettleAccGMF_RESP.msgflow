@@ -20,6 +20,10 @@
         <translation xmi:type="utility:ConstantString" string="PreparaRespuesta"/>
       </nodes>
 
+<nodes xmi:type="ComIbmRESTRequest.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_9" location="116,172" useHTTPTransport="true" urlSelector="/accounts/SSL/ReturnBalanceSettleAccGMF" useHTTPS="true" timeoutForServer="8" parserXmlnscBuildTreeUsingXMLSchema="false" validateMaster="none">
+    <translation xmi:type="utility:ConstantString" string="SOAPInput_HTTPS"/>
+</nodes>
+
  <nodes xmi:type="ComIbmMQGet.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_4" location="230,179" queueName="MQINP.RTNBALANCESETTLEACC.FC.RESP" messageDomainProperty="XMLNSC" transactionMode="no" generateMode="messageAndLocalEnvironment" copyMessage="copyEntireMessage" waitInterval="7000" getWithCorrelID="true" outputDataLocation="OutputLocalEnvironment.ReturnedMessage">
         <translation xmi:type="utility:ConstantString" string="MQ_SERVICE.RESP"/>
       </nodes>

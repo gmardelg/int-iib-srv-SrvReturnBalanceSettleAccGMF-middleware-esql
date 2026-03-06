@@ -20,7 +20,7 @@
         <translation xmi:type="utility:ConstantString" string="PreparaRespuesta"/>
       </nodes>
 
-<nodes xmi:type="ComIbmRESTRequest.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_9" location="116,172" useHTTPTransport="true" urlSelector="/accounts/SSL/ReturnBalanceSettleAccGMF" useHTTPS="true" timeoutForServer="8" parserXmlnscBuildTreeUsingXMLSchema="false" validateMaster="none">
+<nodes xmi:type="ComIbmRESTRequest.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_9" location="116,172" useHTTPTransport="true" urlSelector="/accounts/SSL/ReturnBalanceSettleAccGMF" useHTTPS="true" timeoutForServer="62" parserXmlnscBuildTreeUsingXMLSchema="false" validateMaster="none">
     <translation xmi:type="utility:ConstantString" string="SOAPInput_HTTPS"/>
 </nodes>
 

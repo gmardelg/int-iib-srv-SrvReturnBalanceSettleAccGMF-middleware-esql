@@ -24,7 +24,7 @@
     <translation xmi:type="utility:ConstantString" string="SOAPInput_HTTPS"/>
 </nodes>
 
- <nodes xmi:type="ComIbmMQGet1.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_4" location="230,179" queueName="MQINP.RTNBALANCESETTLEACC.FC.RESP" messageDomainProperty="XMLNSC" transactionMode="no" generateMode="messageAndLocalEnvironment" copyMessage="copyEntireMessage" waitInterval="7000" getWithCorrelID="true" outputDataLocation="OutputLocalEnvironment.ReturnedMessage">
+ <nodes xmi:type="ComIbmMQGet.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_4" location="230,179" queueName="MQINP.RTNBALANCESETTLEACC.FC.RESP" messageDomainProperty="XMLNSC" transactionMode="no" generateMode="messageAndLocalEnvironment" copyMessage="copyEntireMessage" waitInterval="7000" getWithCorrelID="true" outputDataLocation="OutputLocalEnvironment.ReturnedMessage">
         <translation xmi:type="utility:ConstantString" string="MQ_SERVICE.RESP"/>
       </nodes>
 
@@ -55,7 +55,7 @@
     </composition>
     <propertyOrganizer>
       <propertyDescriptor groupName="Group.Basic" describedAttribute="Property.waitInterval">
-        <propertyName xmi:type="utility:TranslatableString" key="Property.waitInterval" pluginId="com.ibm.etools.mft.ibmnodes.definitions"/>
+        <propertyName xmi:type="utility:TranslatableString" key="Property.waitInterval" bundleName="FCMComposite_1_4"  pluginId="com.ibm.etools.mft.ibmnodes.definitions"/>
       </propertyDescriptor>
     </propertyOrganizer>
     <attributeLinks promotedAttribute="Property.waitInterval" overriddenNodes="FCMComposite_1_4">

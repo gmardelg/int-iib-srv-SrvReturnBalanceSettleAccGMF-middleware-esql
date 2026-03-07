@@ -39,9 +39,6 @@
       <nodes xmi:type="ComIbmMQOutput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_9" location="362,38" queueName="EXCEPTION.REGISTER.REQ" transactionMode="no">
         <translation xmi:type="utility:ConstantString" string="EXCEPTION.REGISTER.REQ"/>
       </nodes>
-      <nodes xmi:type="ComIbmThrow.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_8" location="284,248" messageCatalog="SRV" messageNumber="91" messageText="FCUBSRTService_CreateTransaction FC - TimeOut recibiendo mensaje de respuesta de Adaptador de Integracion.">
-        <translation xmi:type="utility:ConstantString" string="ThrowTimeOut"/>
-      </nodes>
       <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_1" targetNode="FCMComposite_1_4" sourceNode="FCMComposite_1_3" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
       <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_2" targetNode="FCMComposite_1_6" sourceNode="FCMComposite_1_8" sourceTerminalName="OutTerminal.catch" targetTerminalName="InTerminal.in"/>
       <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_3" targetNode="FCMComposite_1_9" sourceNode="FCMComposite_1_6" sourceTerminalName="OutTerminal.out1" targetTerminalName="InTerminal.in"/>

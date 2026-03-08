@@ -2,7 +2,7 @@ BROKER SCHEMA com.bancopopular.services.fc
 PATH common.functions.global.cache;
 
 
-CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpReq
+CREATE COMPUTE MODULE RtnBalanceSettleAccGMFCmpReq
 	CREATE FUNCTION Main() RETURNS BOOLEAN
 	BEGIN
 		/******************************************************/

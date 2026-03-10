@@ -10,7 +10,7 @@ CREATE COMPUTE MODULE RtnBalanceSettleAccGMFCmpReq
 		/******************************************************/
 		SET OutputRoot.MQMD 	   		= InputRoot.MQMD;
 		SET OutputRoot.MQMD.CorrelId	= InputRoot.MQMD.MsgId;
-		SET OutputRoot.MQMD.Expiry 		= UDP_MQEXPIRY;
+		SET OutputRoot.MQMD.expiry 		= UDP_MQEXPIRY;
 		SET OutputRoot.MQRFH2 	   		= InputRoot.MQRFH2;
 		
 		/******************************************************/

@@ -38,6 +38,13 @@ CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpResp
 		--Establece nombres de proveedor y aplicación
 		SET refMQRFH2.usr.log.nmProvider		= PROVIDER;
 		SET refMQRFH2.usr.log.nameApplication	= SERVICE;
+
+SET vence = CURRENT_TIMESTAMP + INTERVAL '15' MINUTE, IF InputBody.Vencimiento < CURRENT_TIMESTAMP THEN
+  -- lógica de expirado
+END IF;
+DECLARE now TIMESTAMP CURRENT_TIMESTAMP;
+DECLARE hace10m TIMESTAMP;
+SET hace10m = now - INTERVAL '10' MINUT
 		
 		--Envia mensaje de Auditoria
 		PROPAGATE TO TERMINAL 'out1' DELETE NONE;

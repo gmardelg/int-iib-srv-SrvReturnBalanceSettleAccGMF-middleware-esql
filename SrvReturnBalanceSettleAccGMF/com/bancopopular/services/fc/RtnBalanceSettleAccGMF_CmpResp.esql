@@ -77,6 +77,13 @@ CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpResp
 		DECLARE data ROW;
 		DECLARE value REFERENCE TO data.value;		
 		DECLARE statusCode CHARACTER;
+
+SET vence = CURRENT_TIMESTAMP + INTERVAL '15' MINUTE, IF InputBody.Vencimiento < CURRENT_TIMESTAMP THEN
+  -- lógica de expirado
+END IF;
+DECLARE now TIMESTAMP CURRENT_TIMESTAMP;
+DECLARE hace10m TIMESTAMP;
+SET hace10m = now - INTERVAL '10' MINUT
 		
 		DECLARE faultString CHARACTER InputRoot.SOAP.Body.*:Fault.faultstring;
 		IF (faultString IS NOT NULL) THEN

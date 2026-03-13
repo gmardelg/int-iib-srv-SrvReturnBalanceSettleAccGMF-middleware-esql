@@ -1,95 +1,92 @@
-BROKER SCHEMA com.bancopopular.services.fc
+BROKER SCHEMA bancopopular.service.fc
 PATH common.functions.global.cache;
 
+/*****************************************************************************
+@COPYRIGHT BPOP 2025. Todos los derechos reservados
+Ninguna parte de este código fuente puese ser reproducida, almacenada en un
+sistema de recuperación o transmitido por ninguna forma por cualquier medio
+electrónico, mecánico, fotocopiadora, grabado u otro, sin el permiso previo y
+por escrito de Banco Popular mediante el capitulo de Integración.
+Autor  : Desarrollador
+Description : Funcionalidad
+*****************************************************************************/
+CREATE COMPUTE MODULE ModifyOverdraftLineFlexcubeCmpReq
 
-CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpReq
-	CREATE FUNCTION Main() RETURNS BOOLEAN
-	BEGIN
-		/******************************************************/
-		-- Copiar cabeceras de mensaje
-		/******************************************************/
-		SET OutputRoot.MQMD 	   		= InputRoot.MQMD;
-		SET OutputRoot.MQMD.CorrelId	= InputRoot.MQMD.MsgId;
-		SET OutputRoot.MQMD.Expiry 		= UDP_MQEXPIRY;
-		SET OutputRoot.MQRFH2 	   		= InputRoot.MQRFH2;
-		
-		/******************************************************/
-		-- Declarar referencias
-		/******************************************************/
-		DECLARE refEnv REFERENCE TO Environment;
-		DECLARE refMQRFH2 REFERENCE TO OutputRoot.MQRFH2;
-		DECLARE refInpRoot REFERENCE TO InputRoot;
-		
-		--Referencia mensaje de entrada
-		DECLARE refInp REFERENCE TO InputRoot.XMLNSC;
-		MOVE refInp LASTCHILD;
-		MOVE refInp LASTCHILD;
-		
-		/******************************************************/
-		-- Establece información para auditoría
-		/******************************************************/
-		SET refMQRFH2.usr.log.idLog	= '2';
-		CALL common.procedures.general.createMsgLogs(refMQRFH2, refMQRFH2.usr.log.idLog, 'MQ');
-		CALL common.procedures.general.saveMQM(refInpRoot, refEnv, refMQRFH2.usr.log.idLog);
+/*****************************************************************************
+@COPYRIGHT BPOP 2025. Todos los derechos reservados
+Ninguna parte de este código fuente puese ser reproducida, almacenada en un
+sistema de recuperación o transmitido por ninguna forma por cualquier medio
+electrónico, mecánico, fotocopiadora, grabado u otro, sin el permiso previo y
+por escrito de Banco Popular mediante el capitulo de Integración.
+Description : Funcionalidad
+*****************************************************************************/
+    CREATE FUNCTION Main() RETURNS BOOLEAN
+    BEGIN
 
-		--Establece nombres de proveedor y aplicación 
-		SET refMQRFH2.usr.log.nmProvider		= PROVIDER;
-		SET refMQRFH2.usr.log.nameApplication	= SERVICE;
+        -- Copiar cabeceras de mensaje
+        SET OutputRoot.MQMD = InputRoot.MQMD;
+        SET OutputRoot.MQMD.CorrelId = InputRoot.MQMD.MsgId;
+        SET OutputRoot.MQMD.Expiry = UDP_MQEXPIRY;
+        SET OutputRoot.MQRFH2 = InputRoot.MQRFH2;
 
-		/******************************************************/
-		-- Creación Mensaje a enviar a FC
-		/******************************************************/
-		-- Declaración de namespace default (prefijo vacio)
-		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.(XMLNSC.NamespaceDecl)xmlns = ns;
-		
-		CREATE FIELD OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_HEADER;
-		DECLARE refOutHdr REFERENCE TO OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_HEADER;
-		
-		--Variables de uso interno
-		DECLARE rqUID     	CHARACTER FIELDVALUE(refInp.*:RqUID);
-		DECLARE channel     CHARACTER FIELDVALUE(refInp.*:MsgRqHdr.*:Channel);
-		DECLARE Concep     CHARACTER FIELDVALUE(refInp.*:ProductId.*:Concept);
+        -- Declarar referencias
+        DECLARE refEnv REFERENCE TO Environment;
+        DECLARE refMQRFH2 REFERENCE TO OutputRoot.MQRFH2;
+        DECLARE refInpRoot REFERENCE TO InputRoot;
 
-		--Mapeo del header
-		SET refOutHdr.ns:SOURCE  = getDataHomologationCache(UBSCOMP,HOM_CAN,channel, HOMOLOGATION);
-		SET refOutHdr.ns:UBSCOMP = UBSCOMP;
+        --Referencia mensaje de entrada
+        DECLARE refInp REFERENCE TO InputRoot.XMLNSC;
+        MOVE refInp LASTCHILD;
+        MOVE refInp LASTCHILD;
 
-		--Lógica para establecer valor de MSGID dado que FC no puede recibir un mismo MSGID para dos o más transacciones
-		DECLARE msgIdNew CHARACTER;
-		--S ya han establecido un nuevo MSGID desde otro componente del BUS
-		IF EXISTS(refInp.*:RqUID2[]) THEN
-			SET msgIdNew = common.functions.general.getRQUIDForFC(refInp.*:RqUID2);
-		END IF;
-		SET refMQRFH2.usr.TRX_REF_1 = rqUID;
+        -- Establece información para auditoría
+        SET refMQRFH2.usr.log.idLog = CTE_Value_2;
+        CALL common.procedures.general.createMsgLogs(refMQRFH2, refMQRFH2.usr.log.idLog, CTE_MQ);
+        CALL common.procedures.general.saveMQM(refInpRoot, refEnv, refMQRFH2.usr.log.idLog);
 
-		--Mapeo del Header
-		SET refOutHdr.ns:MSGID 					   = COALESCE(msgIdNew, rqUID);	
-		SET refOutHdr.ns:USERID                    = FCUSER;
-		SET refOutHdr.ns:BRANCH                    = FIELDVALUE(refInp.*:MsgRqHdr.*:BankInfo.*:BranchId);
-		SET refOutHdr.ns:SERVICE                   = SERVICEFC;
-		SET refOutHdr.ns:OPERATION                 = OPERATION;
-		SET refOutHdr.ns:SOURCE_OPERATION          = OPERATION;
-		SET refOutHdr.ns:SOURCE_USERID             = FIELDVALUE(refInp.*:MsgRqHdr.*:UserId.*:GovIssueIdent.*:IdentSerialNum);
-		SET refOutHdr.ns:ADDL.ns:PARAM[1].ns:NAME  = PARAM_NAME_1;
-		SET refOutHdr.ns:ADDL.ns:PARAM[1].ns:VALUE = COALESCE(FIELDVALUE(refInp.*:MsgRqHdr.*:BankInfo.*:BankIdType),ONE);
-		SET refOutHdr.ns:ADDL.ns:PARAM[2].ns:NAME  = PARAM_NAME_2;
-		SET refOutHdr.ns:ADDL.ns:PARAM[2].ns:VALUE = COALESCE(FIELDVALUE(refInp.*:MsgRqHdr.*:KeyAcctId), ONE);
-		SET refOutHdr.ns:ADDL.ns:PARAM[3].ns:NAME  = PARAM_NAME_3;
-		SET refOutHdr.ns:ADDL.ns:PARAM[3].ns:VALUE = COALESCE(FIELDVALUE(refInp.*:MsgRqHdr.*:IPAddr),ONE);
-		SET refOutHdr.ns:ADDL.ns:PARAM[4].ns:NAME  = PARAM_NAME_4;
-		SET refOutHdr.ns:ADDL.ns:PARAM[4].ns:VALUE = FIELDVALUE(refInp.ifx:RqUID);
-		
-		--Mapeo del body
-		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:TXNACC 	= FIELDVALUE(refInp.*:ProductId.*:AccountNumber);
-		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:PRD 	 	= getDataHomologationPRDFCCache(channel,CAUSAL,Concep, HOMOLOGATION);
-		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:TXNAMT 	= FIELDVALUE(refInp.*:ProductId.*:Amt);
-		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:TXNCCY 	= COP;
-		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:XREF 	 	= FIELDVALUE(refInp.ifx:RqUID);
-		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:BRN 	 	= FIELDVALUE(refInp.*:MsgRqHdr.*:BankInfo.*:BranchId);
-		SET OutputRoot.XMLNSC.ns:FCUBS_REQ_ENV.ns:FCUBS_BODY.ns:"Transaction-Details".ns:TXNBRN 	= FIELDVALUE(refInp.*:ProductId.*:BranchId);						 
-				
-		--Envia mensaje para Auditoria y Back-end
-		PROPAGATE TO TERMINAL 'out1' DELETE NONE;
-		RETURN TRUE;
-	END;
+        -- Establece nombres de proveedor y aplicación
+        SET refMQRFH2.usr.log.nmProvider = CTE_PROVIDER;
+        SET refMQRFH2.usr.log.nameApplication = CTE_APPLICATON;
+
+        -- Creación Mensaje a enviar para FC
+     -- Declaración de namespace default (prefijo vacio)
+  SET OutputRoot.XMLNSC.FCUBS_REQ_ENV.(XMLNSC.Attribute)ns = ns;
+
+  CREATE FIELD OutputRoot.XMLNSC.FCUBS_REQ_ENV.FCUBS_HEADER;
+  DECLARE refOutHdr REFERENCE TO OutputRoot.XMLNSC.FCUBS_REQ_ENV.FCUBS_HEADER;
+
+  --Variables de uso interno
+  DECLARE rqUID   CHARACTER FIELDVALUE(refInp.*:RqUID);
+  DECLARE channel CHARACTER FIELDVALUE(refInp.*:MsgRqHdr.*:Channel);
+
+  --Mapeo del header
+  SET refOutHdr.TXNID       = rqUID;
+  SET refOutHdr.SOURCE       = getDataHomologationCache(CTE_UBSCOMP,CTE_RefDataHomologaAttrName,channel,CTE_RefDataHomologaSchema);  
+  SET refOutHdr.BRANCH                     = FIELDVALUE(refInp.*:MsgRqHdr.*:BankInfo.*:BranchId); 
+  SET refOutHdr.UBSCOMP      = CTE_UBSCOMP;
+  SET refOutHdr.SERVICE                    = CTE_SERVICE_BACKEND; 
+  SET refOutHdr.OPERATION                  = CTE_SERVICE_OPERATION;
+  SET refOutHdr.USERID                     = CTE_FCUSER;
+  SET refOutHdr.SOURCE_USERID              = FIELDVALUE(refInp.*:MsgRqHdr.*:UserId.*:GovIssueIdent.*:IdentSerialNum); 
+
+  --Mapeo del body 
+  CREATE FIELD OutputRoot.XMLNSC.FCUBS_REQ_ENV.FCUBS_BODY."Facility-Full"; 
+  DECLARE refOutBody REFERENCE TO OutputRoot.XMLNSC.FCUBS_REQ_ENV.FCUBS_BODY."Facility-Full"; 
+
+  --Establece el código para el body 
+  /******************************************************/
+  SET refOutBody.LIABNO                = FIELDVALUE(refInp.ifx:ChkNum);
+  SET refOutBody.LINECODE              = FIELDVALUE(refInp.v2:Code);
+  SET refOutBody.LINESERIAL            = COALESCE(FIELDVALUE(refInp.ifx:CurCode), CTE_Value_1);
+  SET refOutBody.UNIQUEIDTYPE          = FIELDVALUE(refInp.ifx:CustId.ifx:GovIssueIdent.ifx:GovIssueIdentType);
+  SET refOutBody.UNIQUEIDNUMBER        = FIELDVALUE(refInp.ifx:CustId.ifx:GovIssueIdent.ifx:IdentSerialNum);
+  SET refOutBody.LIMITAMOUNT           = FIELDVALUE(refInp.ifx:MaxAmt);
+  SET refOutBody.APPROVEDAMT           = FIELDVALUE(refInp.ifx:Amt);
+  
+        -- Propagar el mensaje hacia el terminal 'out1'
+        PROPAGATE TO TERMINAL 'out1' DELETE NONE;
+
+        RETURN TRUE;
+    END;
+
 END MODULE;

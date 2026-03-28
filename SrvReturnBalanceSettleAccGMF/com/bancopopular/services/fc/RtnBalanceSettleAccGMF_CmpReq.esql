@@ -2,7 +2,7 @@ BROKER SCHEMA com.bancopopular.services.fc
 PATH common.functions.global.cache;
 
 
-CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpReq
+CREATE COMPUTE MODULE RtnBalanceSettleAccGMFCmpReq
 	CREATE FUNCTION Main() RETURNS BOOLEAN
 	BEGIN
 		/******************************************************/
@@ -10,8 +10,9 @@ CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpReq
 		/******************************************************/
 		SET OutputRoot.MQMD 	   		= InputRoot.MQMD;
 		SET OutputRoot.MQMD.CorrelId	= InputRoot.MQMD.MsgId;
-		SET OutputRoot.MQMD.Expiry 		= UDP_MQEXPIRY;
+		SET OutputRoot.MQMD.expiry 		= UDP_MQEXPIRY;
 		SET OutputRoot.MQRFH2 	   		= InputRoot.MQRFH2;
+        SET OutputRoot.MQMD.Expiry = UDP_MQEXPIRY;
 		
 		/******************************************************/
 		-- Declarar referencias
@@ -90,6 +91,7 @@ CREATE COMPUTE MODULE RtnBalanceSettleAccGMF_CmpReq
 				
 		--Envia mensaje para Auditoria y Back-end
 		PROPAGATE TO TERMINAL 'out1' DELETE NONE;
+        SET OutputRoot.MQMD.ExpiryS		= CTE_MQEXPIRY;
 		RETURN TRUE;
 	END;
 END MODULE;

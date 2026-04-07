@@ -28,7 +28,7 @@
         <translation xmi:type="utility:ConstantString" string="CmpMsgRq"/>
       </nodes>
       <nodes xmi:type="ComIbmCompute.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_6" location="301,28" dataSource="AUDITORIA" computeExpression="esql://routine/common.modules.general#CmpCreateMsgErrorSRVyRs_IFX_REQ.Main" computeMode="destinationAndMessage">
-        <translation xmi:type="utility:ConstantString" string="CmpGetInfoError"/>
+        <translation xmi:type="utility:ConstantString" />
       </nodes>
       <nodes xmi:type="ComIbmMQOutput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_7" location="340,256" queueName="LOG.REGISTER.REQ" transactionMode="no">
         <translation xmi:type="utility:ConstantString" string="LOG.REGISTER.REQ"/>
